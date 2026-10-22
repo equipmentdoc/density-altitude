@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101923"><meta name="description" content="Offline density altitude calculator for pilots.">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png"><title>Density Altitude</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#101923;color:#f5f9ff}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
+main{max-width:470px;margin:auto;padding:20px 0 32px}.head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.logo{background:#263d53;padding:10px;border-radius:13px;font-size:27px}.head h1{font-size:23px;margin:0}.eyebrow{font-size:10px;color:#a5bcd0;letter-spacing:1.6px}
+.panel{background:#1c2b3a;border-radius:16px;padding:16px;margin-bottom:12px}
+.hero{background:#142d3f;text-align:center;padding:24px 14px}.hero .eyebrow{font-size:12px}
+.number{font-size:clamp(44px,12vw,60px);font-weight:750;letter-spacing:-2px;margin:8px 0}.number small{font-size:16px;letter-spacing:0;color:#afcde0}
+.sub{font-size:13px;color:#bad1e2}.tag{display:inline-block;background:#28465c;border-radius:25px;padding:7px 12px;font-size:11px;margin-top:16px;color:#d8ebfa}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.metric{margin:0}.metric strong{display:block;font-size:24px;margin-top:6px}.metric span{font-size:12px;color:#a9bfd0}
+label{display:block;color:#bed0df;font-size:13px;margin:13px 0 6px}
+input,select,button{width:100%;border:1px solid #43576a;background:#111f2e;color:white;border-radius:10px;font:inherit;padding:13px 12px;min-height:46px}
+input:focus,select:focus{outline:2px solid #85c7ff;outline-offset:1px}button{cursor:pointer;background:#285c84;border:0;font-weight:650}
+button:disabled{opacity:.55;cursor:wait}.buttons{display:flex;gap:9px}.buttons button{flex:1}
+.secondary{background:#263c50}.row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.row label{margin:0}.toggle{width:auto;min-height:auto;accent-color:#75c4ff}
+.switch{display:flex;gap:5px}.switch button{padding:7px 11px;min-height:35px;width:auto;font-size:13px;background:#263b4c}
+.switch button.active{background:#3d779f}
+.muted{font-size:12px;color:#9cb2c3;line-height:1.5}.status{font-size:12px;color:#a8c5db;margin-top:10px}
+.warn{color:#ffd69a}.error{color:#ffb7ae}
+details{font-size:13px;color:#b4cbdc}summary{cursor:pointer;margin-bottom:8px}
+footer{font-size:11px;color:#92a7b8;text-align:center;line-height:1.6;padding:12px}
+.hidden{display:none!important}
+</style></head>
+<body><main>
+<div class="head"><div class="logo">✈</div><div><h1>Density Altitude</h1><div class="eyebrow">FLIGHT CONDITIONS CALCULATOR</div></div></div>
+<section class="panel"><label for="airport">AIRPORT / LOCATION</label>
+<select id="airport"><option value="KABQ">KABQ · Albuquerque International Sunport</option><option value="KSAF">KSAF · Santa Fe Regional</option><option value="K0E0">K0E0 · Moriarty Municipal</option><option value="custom">Custom location</option></select>
+<div class="row"><span id="airport-name" class="muted"></span><span id="airport-elevation" class="muted"></span></div>
+<label for="icao">Other airport ICAO / FAA identifier</label><div class="buttons"><input id="icao" placeholder="e.g. KROW" maxlength="5" autocapitalize="characters" spellcheck="false"><button id="lookup" class="secondary" style="flex:0 0 112px">Look up</button></div>
+<div class="buttons" style="margin-top:10px"><button id="metar">↻ Load live METAR</button><button id="manual" class="secondary">Manual mode</button></div>
+<div id="weather-status" class="status" aria-live="polite">Manual weather · no live data loaded</div></section>
+<section class="panel hero" aria-live="polite"><div class="eyebrow">DENSITY ALTITUDE</div>
+<div class="number"><span id="da">—</span> <small>FT</small></div>
+<div class="sub" id="difference">Enter weather conditions</div><div class="tag" id="source-tag">MANUAL WEATHER · ESTIMATED</div></section>
+<div class="metrics"><section class="panel metric"><span>Pressure altitude</span><strong id="pa">—</strong></section><section class="panel metric"><span>ISA deviation</span><strong id="isa">—</strong></section></div>
+<section class="panel"><div class="row"><h2 style="font-size:17px;margin:0">Weather inputs</h2><div class="switch"><button id="fahrenheit" class="active">°F</button><button id="celsius">°C</button></div></div>
+<label for="elevation">Field elevation (ft MSL)</label><input id="elevation" type="number" inputmode="decimal" step="any">
+<label for="temperature" id="temp-label">Outside air temperature (°F)</label><input id="temperature" type="number" inputmode="decimal" step="any">
+<label for="altimeter">Altimeter setting (inHg)</label><input id="altimeter" type="number" inputmode="decimal" step="any">
+<div class="row" style="margin-top:18px"><label for="humidity">Include humidity correction</label><input id="humidity" class="toggle" type="checkbox"></div>
+<div id="dew-wrap" class="hidden"><label id="dew-label" for="dewpoint">Dew point (°F)</label><input id="dewpoint" type="number" inputmode="decimal" step="any" placeholder="Optional dew point"></div>
+<p class="muted">Calculated using an ISA atmosphere density model. Without dew point, dry air is assumed. METAR readings are observations, not forecasts.</p></section>
+<div class="buttons"><button id="copy" class="secondary">Copy calculation</button><button id="reset" class="secondary">Reset KABQ</button></div>
+<details class="panel" style="margin-top:14px"><summary>Calculation details & limitations</summary>
+<p>Station pressure is estimated from the reported altimeter setting and airport elevation using the standard altimeter relationship. Density altitude is determined by matching computed air density to the ISA atmosphere.</p>
+<p>Pressure altitude and density altitude are rounded to the nearest foot. Published airport elevation may differ from the actual runway threshold elevation. A live weather fetch requires connectivity and a responding AviationWeather.gov endpoint; if it fails, previously entered values remain available.</p>
+<p>Use official weather and the aircraft POH/AFM for takeoff, landing, and climb planning. This calculator is supplemental and is not an approved flight-planning source.</p></details>
+<footer>OFFLINE-READY PWA · KABQ DEFAULT<br>Weather data: NOAA AviationWeather.gov when available</footer>
+</main><script src="./app.js" defer></script></body></html>
