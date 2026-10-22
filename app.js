@@ -46,13 +46,18 @@ $("reset").onclick=()=>{state={...defaults};save();draw();setStatus("Reset to KA
 $("copy").onclick=async()=>{const msg=`Density Altitude\nLocation: ${state.airport}\nElevation: ${state.elevation} ft MSL\nTemperature: ${state.temperature} °${state.unit}\nAltimeter: ${state.altimeter} inHg\nDA: ${$("da").textContent} ft\nPA: ${$("pa").textContent}\nISA deviation: ${$("isa").textContent}\nSource: ${$("source-tag").textContent}`;try{await navigator.clipboard.writeText(msg);setStatus("Calculation copied.");}catch{setStatus("Clipboard unavailable; use a secure HTTPS connection.","warn");}};
 function normalizeIdent(s){const id=s.trim().toUpperCase();if(!/^[A-Z0-9]{3,5}$/.test(id))throw Error("Enter a valid airport identifier.");return id;}
 async function fetchMetar(id){
-const url=`https://aviationweather.gov/api/data/metar?ids=${encodeURIComponent(id)}&format=json`;
-const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
-try{const res=await fetch(url,{signal:controller.signal,headers:{Accept:"application/json"},cache:"no-store"});if(!res.ok)throw Error("Weather service returned "+res.status);const data=await res.json();if(!Array.isArray(data)||!data.length)throw Error("No current METAR available for "+id);return data.find(x=>(x.icaoId||x.station||"").toUpperCase()===id)||data[0];}finally{clearTimeout(timer);}
+if(!airports[id]||id==="custom")throw Error("Automatic weather currently supports KABQ, KSAF, and K0E0. Use manual weather for other airports.");
+const res=await fetch("./weather.json?time="+Date.now(),{cache:"no-store"});
+if(!res.ok)throw Error("Weather feed not published yet. Run the Update METAR workflow in GitHub Actions.");
+const feed=await res.json();const m=feed.stations?.[id];
+if(!m)throw Error("No cached METAR for "+id+". Check the GitHub Actions weather update.");
+const observed=Number(m.obsTime)*1000;
+if(!Number.isFinite(observed)||Date.now()-observed>3*3600000||observed>Date.now()+600000)throw Error("Latest METAR is more than 3 hours old. Use manual weather or verify current observations.");
+return m;
 }
 function getNumber(m,...keys){for(const k of keys)if(m[k]!==undefined&&m[k]!==null&&m[k]!==""){const v=Number(m[k]);if(Number.isFinite(v))return v;}return null;}
 async function load(id){
-$("metar").disabled=true;$("lookup").disabled=true;setStatus("Retrieving latest METAR for "+id+"…");
+$("metar").disabled=true;$("lookup").disabled=true;setStatus("Loading recent METAR for "+id+"…");
 try{
 const m=await fetchMetar(id);
 const t=getNumber(m,"temp","tempC"),a=getNumber(m,"altim","altimeter"),d=getNumber(m,"dewp","dewpoint"),e=getNumber(m,"elev","elevation");
@@ -62,9 +67,9 @@ const alt=a>100?a/33.8638866667:a;
 if(alt<20||alt>35)throw Error("Unexpected altimeter units.");
 const ident=(m.icaoId||m.station||id).toUpperCase();
 state.airport=airports[ident]?ident:"custom";
-if(e!==null&&e>0&&e<30000)state.elevation=String(Math.round(e*3.280839895)); // API elevation is meters
+if(e!==null&&e>0&&e<30000)state.elevation=String(airports[ident]?.elev ?? Math.round(e*3.280839895)); // use published field elevation
 else if(airports[ident])state.elevation=String(airports[ident].elev);
-else if(ident!==state.metarStation)throw Error("Airport elevation unavailable; enter it manually.");
+else throw Error("Airport elevation unavailable; enter it manually.");
 state.temperature=String(Math.round((state.unit==="F"?t*9/5+32:t)*10)/10);
 state.altimeter=alt.toFixed(3);
 if(d!==null)state.dewpoint=String(Math.round((state.unit==="F"?d*9/5+32:d)*10)/10);
@@ -74,8 +79,8 @@ save();draw();setStatus("Loaded "+ident+" · "+state.metarTime+(state.metarRaw?"
 }catch(err){setStatus("Live weather unavailable: "+err.message+" Manual calculator still works.","warn");}
 finally{$("metar").disabled=false;$("lookup").disabled=false;}
 }
-$("metar").onclick=()=>load(state.airport==="custom"?normalizeIdent($("icao").value):state.airport);
-$("lookup").onclick=()=>{try{load(normalizeIdent($("icao").value));}catch(e){setStatus(e.message,"warn");}};
+$("metar").onclick=()=>{if(state.airport==="custom"){setStatus("Select KABQ, KSAF or K0E0 for automatic METAR; custom locations use manual inputs.","warn");return;}load(state.airport);};
+$("lookup").onclick=()=>{try{const id=normalizeIdent($("icao").value);if(airports[id]&&id!=="custom"){$("airport").value=id;$("airport").dispatchEvent(new Event("change"));load(id);}else setStatus("Automatic METAR currently supports KABQ, KSAF and K0E0 only. For other airports use manual entry.","warn");}catch(e){setStatus(e.message,"warn");}};
 if(state.metarTime)setStatus("Last saved METAR: "+state.metarStation+" · "+state.metarTime+" (may be stale)","warn");
 draw();
 if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});

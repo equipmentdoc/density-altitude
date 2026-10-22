@@ -32,8 +32,8 @@ footer{font-size:11px;color:#92a7b8;text-align:center;line-height:1.6;padding:12
 <section class="panel"><label for="airport">AIRPORT / LOCATION</label>
 <select id="airport"><option value="KABQ">KABQ · Albuquerque International Sunport</option><option value="KSAF">KSAF · Santa Fe Regional</option><option value="K0E0">K0E0 · Moriarty Municipal</option><option value="custom">Custom location</option></select>
 <div class="row"><span id="airport-name" class="muted"></span><span id="airport-elevation" class="muted"></span></div>
-<label for="icao">Other airport ICAO / FAA identifier</label><div class="buttons"><input id="icao" placeholder="e.g. KROW" maxlength="5" autocapitalize="characters" spellcheck="false"><button id="lookup" class="secondary" style="flex:0 0 112px">Look up</button></div>
-<div class="buttons" style="margin-top:10px"><button id="metar">↻ Load live METAR</button><button id="manual" class="secondary">Manual mode</button></div>
+<label for="icao">Airport identifier (automatic: KABQ, KSAF, K0E0)</label><div class="buttons"><input id="icao" placeholder="e.g. KROW" maxlength="5" autocapitalize="characters" spellcheck="false"><button id="lookup" class="secondary" style="flex:0 0 112px">Look up</button></div>
+<div class="buttons" style="margin-top:10px"><button id="metar">↻ Load recent METAR</button><button id="manual" class="secondary">Manual mode</button></div>
 <div id="weather-status" class="status" aria-live="polite">Manual weather · no live data loaded</div></section>
 <section class="panel hero" aria-live="polite"><div class="eyebrow">DENSITY ALTITUDE</div>
 <div class="number"><span id="da">—</span> <small>FT</small></div>
@@ -51,5 +51,5 @@ footer{font-size:11px;color:#92a7b8;text-align:center;line-height:1.6;padding:12
 <p>Station pressure is estimated from the reported altimeter setting and airport elevation using the standard altimeter relationship. Density altitude is determined by matching computed air density to the ISA atmosphere.</p>
 <p>Pressure altitude and density altitude are rounded to the nearest foot. Published airport elevation may differ from the actual runway threshold elevation. A live weather fetch requires connectivity and a responding AviationWeather.gov endpoint; if it fails, previously entered values remain available.</p>
 <p>Use official weather and the aircraft POH/AFM for takeoff, landing, and climb planning. This calculator is supplemental and is not an approved flight-planning source.</p></details>
-<footer>OFFLINE-READY PWA · KABQ DEFAULT<br>Weather data: NOAA AviationWeather.gov when available</footer>
+<footer>OFFLINE-READY PWA · KABQ DEFAULT<br>Weather: NOAA METAR feed updated via GitHub Actions</footer>
 </main><script src="./app.js" defer></script></body></html>
